@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Superfarmer Online</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="loginSection">
+        <h2>Witaj w Superfarmerze!</h2>
+        <input type="text" id="nickInput" placeholder="Podaj swój nick">
+        <button id="setNickButton">Ustaw Nick</button>
+    </div>
+
+    <div id="lobbySection" style="display:none;">
+        <h3>Lobby</h3>
+        <input type="text" id="roomNameInput" placeholder="Nazwa nowego pokoju">
+        <button id="createRoomButton">Stwórz Pokój</button>
+        <h4>Dostępne Pokoje:</h4>
+        <ul id="roomsList"></ul>
+    </div>
+
+    <div id="roomSection" style="display:none;">
+        <h2 id="currentRoomName"></h2>
+        <div id="playersList"></div>
+        <button id="readyButton">Jestem Gotów!</button>
+        <div id="gameLog"></div>
+    </div>
+
+    <div id="gameBoardSection" style="display:none;">
+        <h3 id="currentPlayerTurn"></h3>
+        <div class="player-hud">
+            <h4>Twoje Zwierzęta (<span id="myNickDisplay"></span>):</h4>
+            <div id="myAnimals"></div>
+        </div>
+        <div id="otherPlayersAnimals">
+            <h4>Zwierzęta Innych Graczy:</h4>
+        </div>
+        <div id="mainHerdDisplay">
+            <h4>Stado Główne (Bank):</h4>
+        </div>
+
+        <div id="actions">
+            <button id="exchangeBankButton" disabled>Wymień z Bankiem</button>
+            <button id="rollDiceButton" disabled>Rzuć Kością</button>
+            </div>
+        <div id="diceResultDisplay"></div>
+    </div>
+
+    <div id="exchangeModal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h4>Wymiana z Bankiem</h4>
+            <label>Oddajesz:</label>
+            <select id="exchangeFromAnimal"></select>
+            <input type="number" id="exchangeFromAmount" min="1" value="1">
+            <label>Otrzymujesz:</label>
+            <select id="exchangeToAnimal"></select>
+            <button id="confirmExchangeButton">Wymień</button>
+        </div>
+    </div>
+
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
