@@ -26,14 +26,17 @@ const server = http.createServer(app);
 const io = socketIo(server);
 
 app.use(express.json());
-app.use(express.static(path.join(__dirname, "client")));
+app.use(express.static(path.join(__dirname, "public")));
 
 const socketPlayerMap = {};
 
 app.post("/api/player", (req, res) => {
     const { nick } = req.body;
     if (!nick) return res.status(400).json({ message: "Nickname required" });
+    console.log("adding player with nick", nick);
     const playerId = addPlayer(nick);
+    console.log("new player id is", playerId);
+    console.log("getting this exact player", getPlayer(playerId));
     res.json({ success: true, playerId });
 });
 
@@ -67,6 +70,7 @@ app.post("/api/rooms", (req, res) => {
 app.post("/api/rooms/:roomId/join", (req, res) => {
     const { roomId } = req.params;
     const { playerId } = req.body;
+    console.log(`roomid ${roomId} playerid ${playerId} player`, getPlayer(playerId));
     const { nick } = getPlayer(playerId);
     if (!playerId || !nick) {
         return res.status(400).json({ message: "PlayerId is mandatory" });
