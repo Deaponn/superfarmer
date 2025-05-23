@@ -1,37 +1,46 @@
 import React, { useState } from "react";
 import AnimalDisplay from "./AnimalDisplay";
 import ExchangeModal from "./ExchangeModal";
-// import { animalSymbols as appAnimalSymbols } from '../constants'; // Przekazane jako prop
+import ProposeTradeModal from "./ProposeTradeModal";
 
 function GameBoardSection({
     room,
     playerId,
     playerNick,
     onRollDice,
+    onProposeTrade,
     onExchangeWithBank,
     gameLog,
     diceResultDisplay,
     animalSymbols,
 }) {
     const [isExchangeModalOpen, setIsExchangeModalOpen] = useState(false);
+    const [isProposeTradeModalOpen, setIsProposeTradeModalOpen] = useState(false);
 
     const me = room.players.find((p) => p.id === playerId);
     const currentPlayer = room.players.find((p) => p.id === room.gameState.currentPlayerId);
     const isMyTurn = room.gameState.currentPlayerId === playerId;
 
-    // Dostępność przycisków na podstawie stanu tury gracza
     const turnState = room.gameState.playerTurnState
         ? room.gameState.playerTurnState[playerId]
         : { hasExchanged: false, hasRolled: false };
-    const canExchange = isMyTurn && !turnState.hasExchanged && !turnState.hasRolled;
+    const canPerformAnyExchange = isMyTurn && !turnState.hasExchanged && !turnState.hasRolled;
     const canRoll = isMyTurn && !turnState.hasRolled;
 
-    if (!me) return <p>Błąd: Nie znaleziono gracza...</p>; // Powinno być obsłużone wyżej
+    if (!me) return <p>Błąd: Nie znaleziono gracza...</p>;
 
     const handleOpenExchangeModal = () => setIsExchangeModalOpen(true);
     const handleCloseExchangeModal = () => setIsExchangeModalOpen(false);
     const handleConfirmExchange = (exchangeDetails) => {
         onExchangeWithBank(exchangeDetails);
+    };
+
+    const handleOpenProposeTradeModal = () => setIsProposeTradeModalOpen(true);
+    const handleCloseProposeTradeModal = () => setIsProposeTradeModalOpen(false);
+    const handleConfirmProposeTrade = (tradeDetails) => {
+        // { targetPlayerId, offeredItems, requestedItems }
+        onProposeTrade(tradeDetails);
+        // Potencjalnie ustawić turnState.hasExchanged = true
     };
 
     return (
@@ -63,14 +72,20 @@ function GameBoardSection({
                         <button
                             id="exchangeBankButton"
                             onClick={handleOpenExchangeModal}
-                            disabled={!canExchange}
+                            disabled={!canPerformAnyExchange}
                         >
                             Wymień z Bankiem
+                        </button>
+                        <button
+                            id="proposeTradePlayerButton"
+                            onClick={handleOpenProposeTradeModal}
+                            disabled={!canPerformAnyExchange || room.players.length < 2}
+                        >
+                            Wymień z Graczem
                         </button>
                         <button id="rollDiceButton" onClick={onRollDice} disabled={!canRoll}>
                             Rzuć Kością
                         </button>
-                        {/* TODO: Wymiana z Graczem */}
                     </div>
                     {diceResultDisplay && (
                         <div
@@ -91,17 +106,13 @@ function GameBoardSection({
                             textAlign: "left",
                         }}
                     >
-                        {gameLog.slice(-10).map(
-                            (
-                                logEntry // Pokaż np. ostatnie 10 logów
-                            ) => (
-                                <p
-                                    key={logEntry.id}
-                                    className={`log-${logEntry.type}`}
-                                    dangerouslySetInnerHTML={{ __html: logEntry.text }}
-                                ></p>
-                            )
-                        )}
+                        {gameLog.slice(-10).map((logEntry) => (
+                            <p
+                                key={logEntry.id}
+                                className={`log-${logEntry.type}`}
+                                dangerouslySetInnerHTML={{ __html: logEntry.text }}
+                            ></p>
+                        ))}
                     </div>
                 </div>
 
@@ -129,6 +140,14 @@ function GameBoardSection({
                 onConfirmExchange={handleConfirmExchange}
                 playerAnimals={me.animals}
                 bankAnimals={room.gameState.mainHerd}
+            />
+            <ProposeTradeModal
+                isOpen={isProposeTradeModalOpen}
+                onClose={handleCloseProposeTradeModal}
+                onConfirmPropose={handleConfirmProposeTrade}
+                myAnimals={me.animals}
+                otherPlayers={room.players.filter((p) => p.id !== playerId)} // Przekaż listę innych graczy
+                animalSymbols={animalSymbols}
             />
         </div>
     );

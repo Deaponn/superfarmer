@@ -12,10 +12,8 @@ function ExchangeModal({ isOpen, onClose, onConfirmExchange, playerAnimals, bank
 
     useEffect(() => {
         if (isOpen) {
-            // Ustaw domyślne wartości przy otwarciu
             setFromAnimal(allAnimalTypes[0]);
             setFromAmount(1);
-            // Aktualizuj możliwe zwierzęta "do" na podstawie wybranego "z"
             const relevantRules = tradeRulesClient.filter(
                 (rule) => rule.from === allAnimalTypes[0]
             );
@@ -32,15 +30,13 @@ function ExchangeModal({ isOpen, onClose, onConfirmExchange, playerAnimals, bank
         const relevantRules = tradeRulesClient.filter((rule) => rule.from === fromAnimal);
         setPossibleToAnimals(relevantRules.map((rule) => rule.to));
         if (relevantRules.length > 0 && !relevantRules.find((r) => r.to === toAnimal)) {
-            // Jeśli aktualnie wybrane 'toAnimal' nie jest już możliwe, zresetuj
             setToAnimal(relevantRules[0].to);
         } else if (relevantRules.length === 0) {
-            setToAnimal(""); // Brak możliwych wymian
+            setToAnimal("");
         }
-    }, [fromAnimal, toAnimal]); // Dodano toAnimal do zależności
+    }, [fromAnimal, toAnimal]);
 
     useEffect(() => {
-        // Oblicz ile gracz otrzyma
         const rule = tradeRulesClient.find((r) => r.from === fromAnimal && r.to === toAnimal);
         if (
             rule &&

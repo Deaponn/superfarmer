@@ -75,6 +75,7 @@ function initializeGame(room) {
             acc[p.id] = { hasExchanged: false, hasRolled: false };
             return acc;
         }, {}),
+        pendingTrades: {}, // { "tradeId1": { tradeId, proposingPlayerId, targetPlayerId, offeredItems, requestedItems, timestamp }, ... }
     };
     room.players.forEach((player) => {
         // Rozdaj początkowe króliki
@@ -247,6 +248,29 @@ function handleRollDice(room, playerId) {
     return { diceResult: room.gameState.diceResult, logMessages };
 }
 
+function generateTradeId() {
+    return `trade_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+}
+
+function playerHasAnimals(player, items) {
+    if (!player || !player.animals || !items) return false;
+    for (const animal in items) {
+        if ((player.animals[animal] || 0) < items[animal]) {
+            return false;
+        }
+    }
+    return true;
+}
+
+function transferAnimals(fromPlayer, toPlayer, items) {
+    if (!fromPlayer || !toPlayer || !items) return;
+    for (const animal in items) {
+        const amount = items[animal];
+        fromPlayer.animals[animal] = (fromPlayer.animals[animal] || 0) - amount;
+        toPlayer.animals[animal] = (toPlayer.animals[animal] || 0) + amount;
+    }
+}
+
 function handleExchangeWithBank(room, playerId, fromAnimal, fromAmountStr, toAnimal) {
     const player = room.players.find((p) => p.id === playerId);
     if (!player) throw new Error("Gracz nie znaleziony.");
@@ -323,6 +347,9 @@ function determineNextPlayer(room, currentPlayerId, skipCurrent = false) {
 module.exports = {
     initializeGame,
     handleRollDice,
+    generateTradeId,
+    playerHasAnimals,
+    transferAnimals,
     handleExchangeWithBank,
     checkWinCondition,
     determineNextPlayer,

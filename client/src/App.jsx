@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { socket } from "./socketInstance"; // Import instancji socketu
+import { socket } from "./socketInstance";
 import LoginSection from "./components/LoginSection";
 import LobbySection from "./components/LobbySection";
 import RoomSection from "./components/RoomSection";
 import GameBoardSection from "./components/GameBoardSection";
-import { animalSymbols as appAnimalSymbols } from "./constants"; // Zmień nazwę, aby uniknąć konfliktu
-import "./index.css"; // Zaimportuj swoje style
+import ProposeTradeModal from './components/ProposeTradeModal';
+import IncomingTradeModal from './components/IncomingTradeModal';
+import { animalSymbols as appAnimalSymbols } from "./constants";
+import "./index.css";
 
 function App() {
     const [view, setView] = useState("login"); // 'login', 'lobby', 'room', 'game'
@@ -17,8 +19,10 @@ function App() {
     const [rooms, setRooms] = useState([]);
     const [gameLog, setGameLog] = useState([]);
     const [diceResultDisplay, setDiceResultDisplay] = useState("");
+    const [outgoingTrade, setOutgoingTrade] = useState(null); // { tradeId, targetPlayerId, offered, requested }
+    const [incomingTrades, setIncomingTrades] = useState([]); // [{ tradeId, fromPlayerId, fromPlayerNick, offeredItems, requestedItems }]
 
-    const animalSymbols = appAnimalSymbols; // Użyj zaimportowanych symboli
+    const animalSymbols = appAnimalSymbols;
 
     const addLogMessage = useCallback((message, type = "info") => {
         setGameLog((prevLog) => [
@@ -28,23 +32,17 @@ function App() {
     }, []);
 
     useEffect(() => {
-        // Automatyczne logowanie jeśli dane są w localStorage
         if (
             localStorage.getItem("superfarmer_playerId") &&
-            localStorage.getItem("superfarmer_playerNick") && false
+            localStorage.getItem("superfarmer_playerNick") && false // TODO: remove && false
         ) {
             setPlayerId(localStorage.getItem("superfarmer_playerId"));
-            const nick = localStorage.getItem("superfarmer_playerNick");
-            setPlayerNick(nick);
-            // Symulacja /api/player (w oryginalnym kodzie nie było zapytania po nicku przy odświeżeniu)
-            // Jeśli serwer oczekuje zapytania /api/player przy każdym starcie, dodaj je tutaj.
-            // W tej wersji zakładamy, że serwer akceptuje playerId i playerNick wysyłane przy dołączaniu do pokoju.
+            setPlayerNick(localStorage.getItem("superfarmer_playerNick"));
             setView("lobby");
         }
     }, []);
 
     useEffect(() => {
-        // Ustawienie nasłuchiwaczy Socket.IO
         socket.on("connect", () => addLogMessage("Połączono z serwerem.", "success"));
         socket.on("disconnect", () => addLogMessage("Rozłączono z serwerem.", "error"));
         socket.on("error", (data) => {
@@ -62,7 +60,7 @@ function App() {
             if (roomDetails.gameStarted && view !== "game") {
                 setView("game");
             } else if (!roomDetails.gameStarted && view === "game") {
-                setView("room"); // Powrót do lobby pokoju jeśli gra się zakończyła
+                setView("room");
             }
         });
         socket.on("playerLeft", ({ nick, roomDetails }) => {
@@ -73,7 +71,7 @@ function App() {
             addLogMessage("Gra się rozpoczyna!", "event-important");
             setCurrentRoom(roomDetails);
             setView("game");
-            setGameLog([]); // Wyczyść logi z lobby
+            setGameLog([]);
         });
         socket.on("diceRollResult", (data) => {
             const { nick: rollerNick, diceResult, log, updatedRoom } = data;
@@ -84,6 +82,41 @@ function App() {
             );
             log.forEach((msg) => addLogMessage(msg, "game"));
             setCurrentRoom(updatedRoom);
+        });
+
+        socket.on('tradeOfferReceived', (tradeOffer) => {
+            addLogMessage(`Otrzymałeś ofertę wymiany od ${tradeOffer.fromPlayerNick}.`, 'event');
+            setIncomingTrades(prevTrades => [...prevTrades, tradeOffer]);
+        });
+
+        socket.on('tradeOfferResponse', ({ tradeId, respondingPlayerNick, accepted, originalOfferDetails }) => {
+            if (outgoingTrade && outgoingTrade.tradeId === tradeId) {
+                setOutgoingTrade(null); // Wyczyść wysłaną ofertę
+            }
+            if (accepted) {
+                addLogMessage(`Gracz ${respondingPlayerNick} zaakceptował Twoją ofertę wymiany.`, 'success');
+                // Stan gry (zwierzęta) powinien być zaktualizowany przez 'roomUpdate' lub dedykowany 'tradeCompleted'
+            } else {
+                addLogMessage(`Gracz ${respondingPlayerNick} odrzucił Twoją ofertę wymiany.`, 'info');
+            }
+        });
+
+        socket.on('tradeCompleted', (updatedRoomData) => { // Serwer może wysłać cały zaktualizowany pokój
+            addLogMessage('Wymiana zakończona pomyślnie.', 'event');
+            setCurrentRoom(updatedRoomData); // Aktualizacja całego stanu pokoju
+            // Jeśli serwer wysyła tylko zaktualizowane dane graczy:
+            // setCurrentRoom(prevRoom => ({
+            // ...prevRoom,
+            // players: prevRoom.players.map(p => /* zaktualizuj graczy biorących udział w wymianie */)
+            // }));
+        });
+
+        socket.on('tradeOfferCancelled', ({ tradeId, reason }) => {
+            addLogMessage(`Oferta wymiany (${tradeId}) została anulowana: ${reason}`, 'warning');
+            setIncomingTrades(prev => prev.filter(t => t.tradeId !== tradeId));
+            if (outgoingTrade && outgoingTrade.tradeId === tradeId) {
+                setOutgoingTrade(null);
+            }
         });
         socket.on("bankExchangeResult", (data) => {
             const { success, log, updatedRoom } = data;
@@ -102,11 +135,9 @@ function App() {
         socket.on("gameOver", ({ winnerNick, roomDetails }) => {
             addLogMessage(`KONIEC GRY! Wygrywa ${winnerNick}! 🎉`, "event-important");
             setCurrentRoom(roomDetails);
-            // Można by ustawić specjalny widok 'gameOver' lub zablokować przyciski w GameBoard
         });
 
         return () => {
-            // Czyszczenie nasłuchiwaczy przy odmontowywaniu komponentu
             socket.off("connect");
             socket.off("disconnect");
             socket.off("error");
@@ -115,30 +146,25 @@ function App() {
             socket.off("playerLeft");
             socket.off("gameStarting");
             socket.off("diceRollResult");
+            socket.off('tradeOfferReceived');
+            socket.off('tradeOfferResponse');
+            socket.off('tradeCompleted');
+            socket.off('tradeOfferCancelled');
             socket.off("bankExchangeResult");
             socket.off("turnChange");
             socket.off("gameOver");
         };
-    }, [addLogMessage, view, animalSymbols]); // Dodaj animalSymbols do zależności jeśli są dynamiczne
+    }, [addLogMessage, view, animalSymbols, addLogMessage, outgoingTrade]);
 
     const handleSetNick = async (nick) => {
         try {
-            // W oryginalnym kodzie klienta, endpoint /api/player był wywoływany
-            // i zwracał nowy playerId. Jeśli serwer tego oczekuje, zostawiamy to.
-            // Jeśli serwer akceptuje playerId z localStorage, to zapytanie można uprościć
-            // lub usunąć, jeśli playerId jest generowany tylko raz na początku.
             const response = await fetch("/api/player", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ nick }),
             });
-            // Załóżmy, że serwer zwraca `playerId` lub potwierdzenie.
-            // W oryginalnym kodzie klienta `playerId` był nadpisywany odpowiedzią.
-            const { playerId } = await response.json(); // Może zawierać playerId lub tylko wiadomość
+            const { playerId } = await response.json();
 
-            // Jeśli serwer generuje nowy playerId po ustawieniu nicka:
-            // const newPlayerId = data.playerId; // Jeśli serwer zwraca playerId
-            // setPlayerId(newPlayerId);
             setPlayerId(playerId);
             localStorage.setItem("superfarmer_playerId", playerId);
 
@@ -177,13 +203,10 @@ function App() {
             const response = await fetch("/api/rooms", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                // Serwer oczekuje playerId i playerNick przy tworzeniu pokoju
                 body: JSON.stringify({ name: roomName }),
             });
             const newRoom = await response.json();
             if (response.ok) {
-                // Po stworzeniu, dołącz do pokoju przez API, a potem przez WebSocket
-                console.log("joining", newRoom);
                 handleJoinRoom(newRoom.id);
             } else {
                 alert(`Błąd tworzenia pokoju: ${newRoom.message}`);
@@ -205,7 +228,6 @@ function App() {
             if (data.success) {
                 addLogMessage(`Dołączanie do pokoju ${data.roomDetails.name}...`);
                 socket.emit("joinRoom", { roomId, playerId, playerNick });
-                // setView i setCurrentRoom zostaną obsłużone przez socket.on('joinedRoom')
             } else {
                 alert(`Nie udało się dołączyć: ${data.message}`);
                 addLogMessage(`Nie udało się dołączyć: ${data.message}`, "error");
@@ -223,12 +245,32 @@ function App() {
     };
 
     const handleRollDice = () => {
-        setDiceResultDisplay(""); // Wyczyść poprzedni wynik
+        setDiceResultDisplay("");
         socket.emit("rollDice");
     };
 
+    const handleProposeTrade = (tradeDetails) => { // { targetPlayerId, offeredItems, requestedItems }
+        if (!currentRoom || !currentRoom.gameStarted || currentRoom.gameState.currentPlayerId !== playerId) {
+            alert("Nie możesz teraz zaproponować wymiany.");
+            return;
+        }
+        // Tutaj serwer powinien nadać tradeId i zapisać ofertę
+        // Klient tylko wysyła propozycję
+        socket.emit('proposeTradeToPlayer', tradeDetails);
+        // Można ustawić stan outgoingTrade tymczasowo, a serwer potwierdzi z tradeId
+        // lub poczekać na potwierdzenie od serwera, że oferta została wysłana
+        addLogMessage(`Wysyłanie propozycji wymiany do gracza ${tradeDetails.targetPlayerId}...`, 'info');
+        // Dla uproszczenia, zakładamy, że serwer nada tradeId i ewentualnie
+        // odeśle potwierdzenie wysłania oferty, lub po prostu gracz będzie czekał na odpowiedź.
+        // Można by tu ustawić np. setOutgoingTrade({ ...tradeDetails, status: 'pending_server_ack' });
+    };
+
+    const handleRespondToTrade = (tradeId, accepted) => {
+        socket.emit('respondToTradeOffer', { tradeId, accepted });
+        setIncomingTrades(prevTrades => prevTrades.filter(trade => trade.tradeId !== tradeId));
+    };
+
     const handleExchangeWithBank = (exchangeDetails) => {
-        // exchangeDetails = { fromAnimal, fromAmount, toAnimal }
         socket.emit("exchangeWithBank", { exchange: exchangeDetails });
     };
 
@@ -259,12 +301,21 @@ function App() {
                     playerId={playerId}
                     playerNick={playerNick}
                     onRollDice={handleRollDice}
+                    onProposeTrade={handleProposeTrade}
                     onExchangeWithBank={handleExchangeWithBank}
                     gameLog={gameLog}
                     diceResultDisplay={diceResultDisplay}
                     animalSymbols={animalSymbols}
                 />
             )}
+            {incomingTrades.map(trade => (
+                <IncomingTradeModal
+                    key={trade.tradeId}
+                    tradeOffer={trade}
+                    onRespond={handleRespondToTrade}
+                    animalSymbols={animalSymbols}
+                />
+            ))}
         </div>
     );
 }

@@ -107,6 +107,20 @@ function setPlayerReady(roomId, playerId) {
     return room;
 }
 
+function addLogMessageToRoom(room, message) {
+    if (room && room.gameState) {
+        if (!room.gameState.log) {
+            room.gameState.log = [];
+        }
+        const timestamp = new Date().toLocaleTimeString();
+        room.gameState.log.push(`[${timestamp}] ${message}`);
+        // Utrzymaj log w rozsądnej długości
+        if (room.gameState.log.length > 50) {
+            room.gameState.log.shift();
+        }
+    }
+}
+
 module.exports = {
     createRoom,
     joinRoom,
@@ -116,6 +130,7 @@ module.exports = {
     removePlayerFromSocketRoom,
     setPlayerReady,
     isPlayerInRoom,
+    addLogMessageToRoom,
     animalSymbols,
     initialMainHerd, // Eksport, aby inne moduły miały dostęp
 };

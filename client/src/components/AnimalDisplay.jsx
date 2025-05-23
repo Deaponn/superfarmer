@@ -1,5 +1,4 @@
 import React from "react";
-// import { animalSymbols } from '../constants'; // Można importować tutaj lub przekazać jako prop
 
 function AnimalDisplay({ animals, animalSymbols, title }) {
     return (
