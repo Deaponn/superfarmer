@@ -13,7 +13,7 @@ function IncomingTradeModal({ tradeOffer, onRespond, animalSymbols }) {
     };
 
     return (
-        <div className="modal incoming-trade-modal" style={{ display: "block", zIndex: 1050 }}>
+        <div className="modal incoming-trade-modal" style={{ display: "block", zIndex: 1050, backgroundColor: "#383838" }}>
             <div className="modal-content">
                 <h4>Oferta Wymiany od: {fromPlayerNick}</h4>
                 <p>

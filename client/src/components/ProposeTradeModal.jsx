@@ -65,7 +65,7 @@ function ProposeTradeModal({
     if (!isOpen) return null;
 
     return (
-        <div className="modal" style={{ display: "block" }}>
+        <div id="tradeModal" className="modal">
             <div className="modal-content" style={{ minWidth: "400px" }}>
                 <span className="close-button" onClick={onClose}>
                     &times;

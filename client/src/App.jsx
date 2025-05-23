@@ -6,6 +6,7 @@ import RoomSection from "./components/RoomSection";
 import GameBoardSection from "./components/GameBoardSection";
 import IncomingTradeModal from './components/IncomingTradeModal';
 import { animalSymbols as appAnimalSymbols } from "./constants";
+import "./App.css";
 import "./index.css";
 
 function App() {

@@ -18,7 +18,7 @@ function GameBoardSection({
     const [isProposeTradeModalOpen, setIsProposeTradeModalOpen] = useState(false);
 
     const me = room.players.find((p) => p.id === playerId);
-    const currentPlayer = room.players.find((p) => p.id === room.gameState.currentPlayerId);
+    const currentPlayer = room.gameState.currentPlayerId;
     const isMyTurn = room.gameState.currentPlayerId === playerId;
 
     const turnState = room.gameState.playerTurnState
@@ -43,56 +43,75 @@ function GameBoardSection({
 
     return (
         <div id="gameBoardSection">
-            <h3 id="currentPlayerTurn">
-                Tura gracza: {currentPlayer ? currentPlayer.nick : "N/A"}
-            </h3>
-
             <div className="game-layout">
-                <div className="player-column">
-                    <div className="player-hud">
+                <div className="top-game-row">
+                    <div id="otherPlayersAnimals">
+                        {room.players.length >= 4 &&
+                            (function (otherPlayer) {
+                                return (
+                                    <div
+                                        key={otherPlayer.id}
+                                        style={{
+                                            border:
+                                                currentPlayer === otherPlayer.id
+                                                    ? "3px solid blue"
+                                                    : "",
+                                        }}
+                                    >
+                                        <AnimalDisplay
+                                            animals={otherPlayer.animals}
+                                            animalSymbols={animalSymbols}
+                                            title={otherPlayer.nick}
+                                        />
+                                    </div>
+                                );
+                            })(room.players.filter((p) => p.id !== playerId)[2])}
+                    </div>
+                </div>
+                <div className="middle-game-row">
+                    <div
+                        className="player-hud"
+                        style={{
+                            border: currentPlayer === playerId ? "3px solid blue" : "",
+                        }}
+                    >
                         <AnimalDisplay
                             animals={me.animals}
                             animalSymbols={animalSymbols}
                             title={`Twoje Zwierzęta (${playerNick})`}
                         />
                     </div>
-                    <div id="mainHerdDisplay" style={{ marginTop: "20px" }}>
+                    <div id="mainHerdDisplay">
                         <AnimalDisplay
                             animals={room.gameState.mainHerd}
                             animalSymbols={animalSymbols}
                             title="Stado Główne (Bank)"
                         />
                     </div>
-                </div>
-
-                <div className="center-column">
-                    <div id="actions">
-                        <button
-                            id="exchangeBankButton"
-                            onClick={handleOpenExchangeModal}
-                            disabled={!canPerformAnyExchange}
-                        >
-                            Wymień z Bankiem
-                        </button>
-                        <button
-                            id="proposeTradePlayerButton"
-                            onClick={handleOpenProposeTradeModal}
-                            disabled={!canPerformAnyExchange || room.players.length < 2}
-                        >
-                            Wymień z Graczem
-                        </button>
-                        <button id="rollDiceButton" onClick={onRollDice} disabled={!canRoll}>
-                            Rzuć Kością
-                        </button>
+                    <div id="otherPlayersAnimals">
+                        {room.players.length >= 2 &&
+                            (function (otherPlayer) {
+                                return (
+                                    <div
+                                        key={otherPlayer.id}
+                                        style={{
+                                            border:
+                                                currentPlayer === otherPlayer.id
+                                                    ? "3px solid blue"
+                                                    : "",
+                                        }}
+                                    >
+                                        <AnimalDisplay
+                                            animals={otherPlayer.animals}
+                                            animalSymbols={animalSymbols}
+                                            title={otherPlayer.nick}
+                                        />
+                                    </div>
+                                );
+                            })(room.players.filter((p) => p.id !== playerId)[0])}
                     </div>
-                    {diceResultDisplay && (
-                        <div
-                            id="diceResultDisplay"
-                            style={{ marginTop: "10px", fontWeight: "bold" }}
-                        >
-                            {diceResultDisplay}
-                        </div>
-                    )}
+                </div>
+                <div className="bottom-game-row">
                     <div
                         id="gameLog"
                         style={{
@@ -112,22 +131,67 @@ function GameBoardSection({
                             ></p>
                         ))}
                     </div>
-                </div>
-
-                <div className="other-players-column">
                     <div id="otherPlayersAnimals">
-                        <h4>Zwierzęta Innych Graczy:</h4>
-                        {room.players
-                            .filter((p) => p.id !== playerId)
-                            .map((otherPlayer) => (
-                                <div key={otherPlayer.id} style={{ marginBottom: "15px" }}>
-                                    <AnimalDisplay
-                                        animals={otherPlayer.animals}
-                                        animalSymbols={animalSymbols}
-                                        title={otherPlayer.nick}
-                                    />
-                                </div>
-                            ))}
+                        {room.players.length >= 3 &&
+                            (function (otherPlayer) {
+                                return (
+                                    <div
+                                        key={otherPlayer.id}
+                                        style={{
+                                            border:
+                                                currentPlayer === otherPlayer.id
+                                                    ? "3px solid blue"
+                                                    : "",
+                                        }}
+                                    >
+                                        <AnimalDisplay
+                                            animals={otherPlayer.animals}
+                                            animalSymbols={animalSymbols}
+                                            title={otherPlayer.nick}
+                                        />
+                                    </div>
+                                );
+                            })(room.players.filter((p) => p.id !== playerId)[1])}
+                    </div>
+                    <div>
+                        <div id="actions">
+                            <button
+                                id="exchangeBankButton"
+                                onClick={handleOpenExchangeModal}
+                                disabled={!canPerformAnyExchange}
+                                style={{
+                                    cursor: !canPerformAnyExchange ? "not-allowed" : "pointer",
+                                }}
+                            >
+                                Wymień z Bankiem
+                            </button>
+                            <button
+                                id="proposeTradePlayerButton"
+                                onClick={handleOpenProposeTradeModal}
+                                disabled={!canPerformAnyExchange || room.players.length < 2}
+                                style={{
+                                    cursor:
+                                        !canPerformAnyExchange || room.players.length < 2
+                                            ? "not-allowed"
+                                            : "pointer",
+                                }}
+                            >
+                                Wymień z Graczem
+                            </button>
+                            <button
+                                id="rollDiceButton"
+                                onClick={onRollDice}
+                                disabled={!canRoll}
+                                style={{ cursor: !canRoll ? "not-allowed" : "pointer" }}
+                            >
+                                Rzuć Kością
+                            </button>
+                        </div>
+                        {diceResultDisplay ? (
+                            <div id="diceResultDisplay">{diceResultDisplay}</div>
+                        ) : (
+                            <div id="diceResultDisplay">Rzuć kością!</div>
+                        )}
                     </div>
                 </div>
             </div>

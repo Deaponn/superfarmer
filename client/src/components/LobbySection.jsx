@@ -11,18 +11,16 @@ function LobbySection({ rooms, onCreateRoom, onJoinRoom, onRefreshRooms }) {
     return (
         <div id="lobbySection">
             <h3>Lobby</h3>
-            <div>
-                <input
-                    type="text"
-                    id="roomNameInput"
-                    placeholder="Nazwa nowego pokoju"
-                    value={roomName}
-                    onChange={(e) => setRoomName(e.target.value)}
-                />
-                <button id="createRoomButton" onClick={handleCreate}>
-                    Stwórz Pokój
-                </button>
-            </div>
+            <input
+                type="text"
+                id="roomNameInput"
+                placeholder="Nazwa nowego pokoju"
+                value={roomName}
+                onChange={(e) => setRoomName(e.target.value)}
+            />
+            <button id="createRoomButton" onClick={handleCreate}>
+                Stwórz Pokój
+            </button>
             <h4>
                 Dostępne Pokoje:{" "}
                 <button onClick={onRefreshRooms} style={{ marginLeft: "10px", fontSize: "0.8em" }}>
