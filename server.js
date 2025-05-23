@@ -427,7 +427,6 @@ io.on("connection", (socket) => {
             });
             return;
         }
-        // TODO: Dodaj flagę, czy gracz już wymieniał w tej turze
 
         try {
             const result = handleExchangeWithBank(
@@ -445,9 +444,8 @@ io.on("connection", (socket) => {
                     log: result.log,
                     updatedRoom: room,
                 });
-                // Gracz pozostaje aktywny w swojej turze
                 io.to(roomId).emit("turnChange", {
-                    nextPlayerId: room.gameState.currentPlayerId, // Nadal ten sam gracz
+                    nextPlayerId: room.gameState.currentPlayerId,
                     nextPlayerNick: room.players.find(
                         (p) => p.id === room.gameState.currentPlayerId
                     )?.nick,
@@ -461,8 +459,6 @@ io.on("connection", (socket) => {
         }
     });
 
-    // TODO: Implement `proposeTradeWithPlayer`, `acceptTradeWithPlayer`, `rejectTradeWithPlayer`
-
     socket.on("disconnect", () => {
         console.log("Klient rozłączony:", socket.id);
         const playerData = socketPlayerMap[socket.id];
@@ -473,12 +469,12 @@ io.on("connection", (socket) => {
                 if (room) {
                     const wasCurrentPlayer =
                         room.gameStarted && room.gameState.currentPlayerId === playerId;
-                    removePlayerFromSocketRoom(socket, roomId, playerId); // Zaktualizuje też listę graczy
+                    removePlayerFromSocketRoom(socket, roomId, playerId);
                     io.to(roomId).emit("playerLeft", {
                         playerId,
                         nick: "Gracz (rozłączony)",
                         roomDetails: room,
-                    }); // Przekaż zaktualizowany pokój
+                    });
                     io.to(roomId).emit("roomUpdate", room);
 
                     if (room.gameState && room.gameState.pendingTrades) {
@@ -509,11 +505,11 @@ io.on("connection", (socket) => {
                                 );
                             }
                         });
-                        io.to(playerData.roomId).emit("roomUpdate", room); // Jeśli coś się zmieniło
+                        io.to(playerData.roomId).emit("roomUpdate", room);
                     }
 
                     if (wasCurrentPlayer && room.gameStarted && room.players.length > 0) {
-                        room.gameState.currentPlayerId = determineNextPlayer(room, playerId, true); // true = znajdź następnego aktywnego
+                        room.gameState.currentPlayerId = determineNextPlayer(room, playerId, true);
                         const nextPlayer = room.players.find(
                             (p) => p.id === room.gameState.currentPlayerId
                         );
@@ -524,13 +520,11 @@ io.on("connection", (socket) => {
                                 roomDetails: room,
                             });
                         } else if (room.players.length === 0) {
-                            // Opcjonalnie usuń pokój jeśli jest pusty
-                            // deleteRoom(roomId);
+                            deleteRoom(roomId);
                         }
                     } else if (room.gameStarted && room.players.length < 2) {
-                        // Zakończ grę jeśli zostało mniej niż 2 graczy
-                        // io.to(roomId).emit('gameEndedNotEnoughPlayers', { roomDetails: room });
-                        // room.gameStarted = false;
+                        io.to(roomId).emit('gameEndedNotEnoughPlayers', { roomDetails: room });
+                        room.gameStarted = false;
                     }
                 }
             } catch (error) {

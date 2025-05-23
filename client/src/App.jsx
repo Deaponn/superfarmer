@@ -4,7 +4,6 @@ import LoginSection from "./components/LoginSection";
 import LobbySection from "./components/LobbySection";
 import RoomSection from "./components/RoomSection";
 import GameBoardSection from "./components/GameBoardSection";
-import ProposeTradeModal from './components/ProposeTradeModal';
 import IncomingTradeModal from './components/IncomingTradeModal';
 import { animalSymbols as appAnimalSymbols } from "./constants";
 import "./index.css";
@@ -34,7 +33,7 @@ function App() {
     useEffect(() => {
         if (
             localStorage.getItem("superfarmer_playerId") &&
-            localStorage.getItem("superfarmer_playerNick") && false // TODO: remove && false
+            localStorage.getItem("superfarmer_playerNick")
         ) {
             setPlayerId(localStorage.getItem("superfarmer_playerId"));
             setPlayerNick(localStorage.getItem("superfarmer_playerNick"));
@@ -91,24 +90,18 @@ function App() {
 
         socket.on('tradeOfferResponse', ({ tradeId, respondingPlayerNick, accepted, originalOfferDetails }) => {
             if (outgoingTrade && outgoingTrade.tradeId === tradeId) {
-                setOutgoingTrade(null); // Wyczyść wysłaną ofertę
+                setOutgoingTrade(null);
             }
             if (accepted) {
                 addLogMessage(`Gracz ${respondingPlayerNick} zaakceptował Twoją ofertę wymiany.`, 'success');
-                // Stan gry (zwierzęta) powinien być zaktualizowany przez 'roomUpdate' lub dedykowany 'tradeCompleted'
             } else {
                 addLogMessage(`Gracz ${respondingPlayerNick} odrzucił Twoją ofertę wymiany.`, 'info');
             }
         });
 
-        socket.on('tradeCompleted', (updatedRoomData) => { // Serwer może wysłać cały zaktualizowany pokój
+        socket.on('tradeCompleted', (updatedRoomData) => {
             addLogMessage('Wymiana zakończona pomyślnie.', 'event');
-            setCurrentRoom(updatedRoomData); // Aktualizacja całego stanu pokoju
-            // Jeśli serwer wysyła tylko zaktualizowane dane graczy:
-            // setCurrentRoom(prevRoom => ({
-            // ...prevRoom,
-            // players: prevRoom.players.map(p => /* zaktualizuj graczy biorących udział w wymianie */)
-            // }));
+            setCurrentRoom(updatedRoomData);
         });
 
         socket.on('tradeOfferCancelled', ({ tradeId, reason }) => {
@@ -254,15 +247,8 @@ function App() {
             alert("Nie możesz teraz zaproponować wymiany.");
             return;
         }
-        // Tutaj serwer powinien nadać tradeId i zapisać ofertę
-        // Klient tylko wysyła propozycję
         socket.emit('proposeTradeToPlayer', tradeDetails);
-        // Można ustawić stan outgoingTrade tymczasowo, a serwer potwierdzi z tradeId
-        // lub poczekać na potwierdzenie od serwera, że oferta została wysłana
         addLogMessage(`Wysyłanie propozycji wymiany do gracza ${tradeDetails.targetPlayerId}...`, 'info');
-        // Dla uproszczenia, zakładamy, że serwer nada tradeId i ewentualnie
-        // odeśle potwierdzenie wysłania oferty, lub po prostu gracz będzie czekał na odpowiedź.
-        // Można by tu ustawić np. setOutgoingTrade({ ...tradeDetails, status: 'pending_server_ack' });
     };
 
     const handleRespondToTrade = (tradeId, accepted) => {

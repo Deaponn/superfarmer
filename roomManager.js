@@ -3,7 +3,7 @@ const { v4: uuidv4 } = require("uuid");
 // { "roomId1": { id, name, players: [{id, nick, socketId, animals, isReady}], maxPlayers, gameStarted, gameState: {} }, ... }
 let rooms = {};
 const MAX_PLAYERS_PER_ROOM = 4;
-const { animalSymbols, initialMainHerd } = require("./gameLogic"); // Import z gameLogic lub utils
+const { animalSymbols, initialMainHerd } = require("./gameLogic");
 
 function createRoom(name) {
     if (Object.values(rooms).find((r) => r.name === name)) {
@@ -48,7 +48,6 @@ function addPlayerToSocketRoom(socket, roomId, playerId, playerNick) {
 
     let player = room.players.find((p) => p.id === playerId);
     if (!player) {
-        // Jeśli nie dołączył przez API wcześniej, lub to nowy gracz
         if (room.players.length >= room.maxPlayers) throw new Error("Pokój jest pełny.");
         if (room.gameStarted) throw new Error("Gra już trwa, nie można dołączyć jako nowy gracz.");
         player = {
@@ -59,8 +58,8 @@ function addPlayerToSocketRoom(socket, roomId, playerId, playerNick) {
         };
         room.players.push(player);
     }
-    player.socketId = socket.id; // Powiąż/zaktualizuj socketId
-    socket.join(roomId); // Dołącz socket do pokoju Socket.IO
+    player.socketId = socket.id;
+    socket.join(roomId);
     return room;
 }
 
@@ -114,7 +113,6 @@ function addLogMessageToRoom(room, message) {
         }
         const timestamp = new Date().toLocaleTimeString();
         room.gameState.log.push(`[${timestamp}] ${message}`);
-        // Utrzymaj log w rozsądnej długości
         if (room.gameState.log.length > 50) {
             room.gameState.log.shift();
         }
@@ -132,5 +130,5 @@ module.exports = {
     isPlayerInRoom,
     addLogMessageToRoom,
     animalSymbols,
-    initialMainHerd, // Eksport, aby inne moduły miały dostęp
+    initialMainHerd,
 };

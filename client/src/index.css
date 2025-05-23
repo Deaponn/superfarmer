@@ -69,17 +69,17 @@ button:focus-visible {
 
 .incoming-trade-modal {
     position: fixed;
-    top: 20%; /* Dopasuj pozycję */
+    top: 20%;
     left: 50%;
     transform: translate(-50%, -20%);
     background-color: white;
     padding: 20px;
     border: 1px solid #ccc;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    z-index: 1050; /* Upewnij się, że jest na wierzchu */
+    z-index: 1050;
 }
 
 .incoming-trade-modal .modal-content {
-    position: static; /* Nadpisz ogólne style modala, jeśli to konieczne */
+    position: static;
     transform: none;
 }

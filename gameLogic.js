@@ -67,18 +67,16 @@ function initializeGame(room) {
     room.gameStarted = true;
     room.gameState = {
         mainHerd: { ...initialMainHerd },
-        currentPlayerId: room.players[0].id, // Zaczyna pierwszy gracz z listy
+        currentPlayerId: room.players[0].id,
         diceResult: null,
         log: [],
         playerTurnState: room.players.reduce((acc, p) => {
-            // Stan dla każdego gracza w turze
             acc[p.id] = { hasExchanged: false, hasRolled: false };
             return acc;
         }, {}),
         pendingTrades: {}, // { "tradeId1": { tradeId, proposingPlayerId, targetPlayerId, offeredItems, requestedItems, timestamp }, ... }
     };
     room.players.forEach((player) => {
-        // Rozdaj początkowe króliki
         if (room.gameState.mainHerd.rabbit > 0) {
             player.animals.rabbit = 1;
             room.gameState.mainHerd.rabbit--;
@@ -107,7 +105,6 @@ function handleRollDice(room, playerId) {
     let smallDogUsed = false;
     let bigDogUsed = false;
 
-    // Atak lisa
     if (die1 === "fox" || die2 === "fox") {
         if (player.animals.smallDog > 0) {
             player.animals.smallDog--;
@@ -136,7 +133,6 @@ function handleRollDice(room, playerId) {
         }
     }
 
-    // Atak wilka
     if (die1 === "wolf" || die2 === "wolf") {
         if (player.animals.bigDog > 0) {
             player.animals.bigDog--;
@@ -148,7 +144,6 @@ function handleRollDice(room, playerId) {
         } else {
             let animalsLostToWolf = {};
             ["sheep", "pig", "cow"].forEach((type) => {
-                // Wilk nie rusza koni, królików, małych psów
                 if (player.animals[type] > 0) {
                     animalsLostToWolf[type] = player.animals[type];
                     room.gameState.mainHerd[type] += player.animals[type];
@@ -171,19 +166,11 @@ function handleRollDice(room, playerId) {
         }
     }
 
-    // Rozmnażanie (tylko jeśli nie było skutecznego ataku drapieżnika LUB drapieżnik był na tej samej kostce co zwierzę do rozmnożenia i został obroniony)
     const diceOutcomes = [die1, die2];
     let gainedAnimals = {};
 
     for (const outcome of diceOutcomes) {
-        if (outcome === "wolf" || outcome === "fox") continue; // Drapieżniki nie rozmnażają
-
-        // Sprawdzenie, czy atak na tej kostce został odparty (jeśli był drapieżnik)
-        // Ta logika jest uproszczona; jeśli wilk był na die1, a królik na die2, królik może się rozmnożyć
-        // Ważne jest, czy drapieżnik zaatakował *jakiekolwiek* zwierzęta. Jeśli tak, rozmnażanie z tej kostki jest anulowane
-        // chyba że pies obronił.
-        // Uproszczenie: jeśli był lis i nie było małego psa, pomiń rozmnażanie królików.
-        // Jeśli był wilk i nie było dużego psa, pomiń rozmnażanie podatnych zwierząt.
+        if (outcome === "wolf" || outcome === "fox") continue;
 
         let canBreedThisAnimal = true;
         if (outcome === "rabbit" && (die1 === "fox" || die2 === "fox") && !smallDogUsed)
@@ -196,14 +183,11 @@ function handleRollDice(room, playerId) {
             canBreedThisAnimal = false;
 
         if (canBreedThisAnimal) {
-            // Ograniczenie zdobycia pierwszego konia/krowy
             if (
-                (outcome === "horse" && player.animals.horse === 0 && player.animals.cow === 0) || // Potrzebujesz krowy by wymienić na konia, więc nie dostaniesz z rzutu bez posiadania krów. Uproszczenie: pierwszy koń/krowa tylko z wymiany.
+                (outcome === "horse" && player.animals.horse === 0 && player.animals.cow === 0) ||
                 (outcome === "cow" && player.animals.cow === 0 && !player.animals.pig > 0)
             ) {
-                // podobnie dla krowy
                 if (diceOutcomes.includes(outcome) && player.animals[outcome] === 0) {
-                    // Tylko jeśli faktycznie wylosował i nie ma
                     logMessages.push(
                         `${player.nick} nie może otrzymać ${animalSymbols[outcome]} z rzutu, bo nie posiada jeszcze tego zwierzęcia. Pierwsze musi być z wymiany.`
                     );
@@ -239,7 +223,6 @@ function handleRollDice(room, playerId) {
         diceOutcomes.every((d) => d !== "fox" && d !== "wolf") &&
         diceOutcomes.some((d) => ["rabbit", "sheep", "pig", "cow", "horse"].includes(d))
     ) {
-        // Jeśli na kostkach były zwierzęta, ale nic nie przybyło (np. brak par, brak w stadzie)
         logMessages.push(`${player.nick} nie rozmnożył żadnych zwierząt w tej turze.`);
     }
 
@@ -324,16 +307,15 @@ function checkWinCondition(player) {
 }
 
 function determineNextPlayer(room, currentPlayerId, skipCurrent = false) {
-    const activePlayers = room.players.filter((p) => p.socketId); // Tylko aktywni gracze
+    const activePlayers = room.players.filter((p) => p.socketId);
     if (activePlayers.length === 0) return null;
 
     let currentIndex = activePlayers.findIndex((p) => p.id === currentPlayerId);
-    if (currentIndex === -1 && activePlayers.length > 0) return activePlayers[0].id; // Jeśli obecny gracz nieaktywny, weź pierwszego aktywnego
+    if (currentIndex === -1 && activePlayers.length > 0) return activePlayers[0].id;
 
     let nextIndex = skipCurrent ? currentIndex : (currentIndex + 1) % activePlayers.length;
     const nextPlayerId = activePlayers[nextIndex].id;
 
-    // Reset stanu tury dla nowego gracza
     if (
         room.gameState &&
         room.gameState.playerTurnState &&

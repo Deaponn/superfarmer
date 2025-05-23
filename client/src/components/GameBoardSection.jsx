@@ -38,9 +38,7 @@ function GameBoardSection({
     const handleOpenProposeTradeModal = () => setIsProposeTradeModalOpen(true);
     const handleCloseProposeTradeModal = () => setIsProposeTradeModalOpen(false);
     const handleConfirmProposeTrade = (tradeDetails) => {
-        // { targetPlayerId, offeredItems, requestedItems }
         onProposeTrade(tradeDetails);
-        // Potencjalnie ustawić turnState.hasExchanged = true
     };
 
     return (
@@ -146,7 +144,7 @@ function GameBoardSection({
                 onClose={handleCloseProposeTradeModal}
                 onConfirmPropose={handleConfirmProposeTrade}
                 myAnimals={me.animals}
-                otherPlayers={room.players.filter((p) => p.id !== playerId)} // Przekaż listę innych graczy
+                otherPlayers={room.players.filter((p) => p.id !== playerId)}
                 animalSymbols={animalSymbols}
             />
         </div>

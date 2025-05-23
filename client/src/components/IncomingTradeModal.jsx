@@ -1,5 +1,4 @@
 import React from "react";
-// import { animalSymbols as appAnimalSymbols } from '../constants'; // Przekazane jako prop
 
 function IncomingTradeModal({ tradeOffer, onRespond, animalSymbols }) {
     if (!tradeOffer) return null;
@@ -15,8 +14,6 @@ function IncomingTradeModal({ tradeOffer, onRespond, animalSymbols }) {
 
     return (
         <div className="modal incoming-trade-modal" style={{ display: "block", zIndex: 1050 }}>
-            {" "}
-            {/* Wyższy z-index */}
             <div className="modal-content">
                 <h4>Oferta Wymiany od: {fromPlayerNick}</h4>
                 <p>

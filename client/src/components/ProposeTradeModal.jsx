@@ -15,10 +15,9 @@ function ProposeTradeModal({
 
     useEffect(() => {
         if (isOpen && otherPlayers.length > 0) {
-            setTargetPlayerId(otherPlayers[0].id); // Ustaw domyślnie pierwszego gracza
+            setTargetPlayerId(otherPlayers[0].id);
         }
         if (!isOpen) {
-            // Resetuj stan po zamknięciu
             setOfferedItems({});
             setRequestedItems({});
             setTargetPlayerId("");
@@ -27,7 +26,7 @@ function ProposeTradeModal({
 
     const handleItemChange = (itemType, animal, value, isOffered) => {
         const currentAmount = Number(value) || 0;
-        const maxAmount = isOffered ? myAnimals[animal] || 0 : Infinity; // Teoretycznie nieskończoność dla żądanych
+        const maxAmount = isOffered ? myAnimals[animal] || 0 : Infinity;
 
         const newAmount = Math.min(Math.max(0, currentAmount), maxAmount);
 
