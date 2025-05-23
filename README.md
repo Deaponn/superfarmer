@@ -4,7 +4,7 @@ Program umożliwiający granie poprzez internet w grę [Superfarmer](https://www
 
 ## Live demo
 
-Live demo jest dostępne [tutaj](superfarmer.sajecki.ct8.pl)
+Live demo jest dostępne [tutaj](http://superfarmer.sajecki.ct8.pl)
 
 ## Uruchomienie projektu
 
